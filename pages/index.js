@@ -1,5 +1,5 @@
 function Home(){
-    return <h1>Melhor curso do mundo!!</h1>
+    return <h1>Amo vcs pessoal!!</h1>
 }
 
 export default Home;
