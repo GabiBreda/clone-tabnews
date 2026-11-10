@@ -35,24 +35,25 @@ Equipe FinTab,
   });
 }
 
-async function findOneByUserId(userId) {
-  const newToken = await runSelectQuery(userId);
-  return newToken;
+async function findOneValidById(tokenId) {
+  const sessionFound = await runSelectQuery(tokenId);
 
-  async function runSelectQuery(userId) {
-    const results = await database.query({
-      text: "select * from user_activation_tokens where user_id = $1 limit 1;",
-      values: [userId],
+  return sessionFound;
+
+  async function runSelectQuery(tokenId) {
+    const result = await database.query({
+      text: `SELECT * FROM user_activation_tokens WHERE id = $1 AND expires_at > NOW() AND used_at IS NULL LIMIT 1;`,
+      values: [tokenId],
     });
 
-    return results.rows[0];
+    return result.rows[0];
   }
 }
 
 const activation = {
   sendEmailToUser,
   create,
-  findOneByUserId,
+  findOneValidById,
 };
 
 export default activation;
