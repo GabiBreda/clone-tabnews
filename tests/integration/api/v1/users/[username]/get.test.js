@@ -24,9 +24,7 @@ describe("GET /api/v1/users/[username]", () => {
 
       expect(responseBody).toEqual({
         id: responseBody.id,
-        username: "MesmoCase",
-        email: createdUser.email,
-        password: responseBody.password,
+        username: createdUser.username,
         features: ["read:activation_token"],
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
@@ -41,7 +39,6 @@ describe("GET /api/v1/users/[username]", () => {
       const createdUser = await orchestrator.createUser({
         username: "CaseDiferente",
       });
-
       const response = await fetch(
         "http://localhost:3000/api/v1/users/casediferente",
       );
@@ -52,9 +49,7 @@ describe("GET /api/v1/users/[username]", () => {
 
       expect(responseBody).toEqual({
         id: responseBody.id,
-        username: "CaseDiferente",
-        email: createdUser.email,
-        password: responseBody.password,
+        username: createdUser.username,
         features: ["read:activation_token"],
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
