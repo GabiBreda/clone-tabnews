@@ -1,36 +1,39 @@
-import { InternalServerError } from "infra/errors.js";
 import authorization from "models/authorization.js";
+import { InternalServerError } from "infra/errors.js";
 
 describe("models/authorization.js", () => {
   describe(".can()", () => {
-    test("without user", () => {
+    test("without `user`", () => {
       expect(() => {
         authorization.can();
       }).toThrow(InternalServerError);
     });
 
-    test("without user.features", () => {
+    test("without `user.features`", () => {
       const createdUser = {
-        username: "UserWithoutUser",
+        username: "UserWithoutFeatures",
       };
+
       expect(() => {
         authorization.can(createdUser);
       }).toThrow(InternalServerError);
     });
 
-    test("with unknown feature", () => {
+    test("with unknown `feature`", () => {
       const createdUser = {
         features: [],
       };
+
       expect(() => {
-        authorization.can(createdUser, "unknown: feature");
+        authorization.can(createdUser, "unknown:feature");
       }).toThrow(InternalServerError);
     });
 
-    test("with valid user and known feature", () => {
+    test("with valid `user` and known `feature`", () => {
       const createdUser = {
         features: ["create:user"],
       };
+
       expect(authorization.can(createdUser, "create:user")).toBe(true);
     });
   });

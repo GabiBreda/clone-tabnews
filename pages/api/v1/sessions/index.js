@@ -4,20 +4,18 @@ import authentication from "models/authentication.js";
 import authorization from "models/authorization.js";
 import session from "models/session.js";
 
-import { ForbiddenError } from "infra/errors";
+import { ForbiddenError } from "infra/errors.js";
 
-const router = createRouter();
-
-router.use(controller.injectAnonymousOrUser);
-router.post(controller.canRequest("create:session"), postHandler);
-router.delete(deleteHadler);
-
-export default router.handler(controller.errorHandlers);
+export default createRouter()
+  .use(controller.injectAnonymousOrUser)
+  .post(controller.canRequest("create:session"), postHandler)
+  .delete(deleteHandler)
+  .handler(controller.errorHandlers);
 
 async function postHandler(request, response) {
   const userInputValues = request.body;
 
-  const authenticatedUser = await authentication.getAuthenticatedUser(
+  const authenticatedUser = await authentication.getUser(
     userInputValues.email,
     userInputValues.password,
   );
@@ -25,7 +23,7 @@ async function postHandler(request, response) {
   if (!authorization.can(authenticatedUser, "create:session")) {
     throw new ForbiddenError({
       message: "Você não possui permissão para fazer login.",
-      action: "Contate o suporte caso ache que é um erro.",
+      action: "Contate o suporte caso você acredite que isto seja um erro.",
     });
   }
 
@@ -42,7 +40,7 @@ async function postHandler(request, response) {
   return response.status(201).json(secureOutputValues);
 }
 
-async function deleteHadler(request, response) {
+async function deleteHandler(request, response) {
   const userTryingToDelete = request.context.user;
   const sessionToken = request.cookies.session_id;
 

@@ -10,29 +10,37 @@ async function findOneValidByToken(sessionToken) {
   return sessionFound;
 
   async function runSelectQuery(sessionToken) {
-    const result = await database.query({
-      text: `SELECT * FROM sessions WHERE token = $1 AND expires_at > NOW() LIMIT 1;`,
+    const results = await database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          sessions
+        WHERE
+          token = $1
+          AND expires_at > NOW()
+        LIMIT
+          1
+      ;`,
       values: [sessionToken],
     });
 
-    if (result.rowCount === 0) {
+    if (results.rowCount === 0) {
       throw new UnauthorizedError({
         message: "Usuário não possui sessão ativa.",
         action: "Verifique se este usuário está logado e tente novamente.",
       });
     }
 
-    return result.rows[0];
+    return results.rows[0];
   }
 }
 
-async function create(userOrId) {
-  const userId = userOrId.id || userOrId;
+async function create(userId) {
   const token = crypto.randomBytes(48).toString("hex");
   const expiresAt = new Date(Date.now() + EXPIRATION_IN_MILLISECONDS);
 
   const newSession = await runInsertQuery(token, userId, expiresAt);
-
   return newSession;
 
   async function runInsertQuery(token, userId, expiresAt) {
@@ -42,8 +50,9 @@ async function create(userOrId) {
           sessions (token, user_id, expires_at)
         VALUES
           ($1, $2, $3)
-        RETURNING *;
-      `,
+        RETURNING
+          *
+      ;`,
       values: [token, userId, expiresAt],
     });
 
@@ -53,34 +62,47 @@ async function create(userOrId) {
 
 async function renew(sessionId) {
   const expiresAt = new Date(Date.now() + EXPIRATION_IN_MILLISECONDS);
-  const renewedSessionObject = await runUpdateQuery(sessionId, expiresAt);
 
+  const renewedSessionObject = await runUpdateQuery(sessionId, expiresAt);
   return renewedSessionObject;
 
   async function runUpdateQuery(sessionId, expiresAt) {
     const results = await database.query({
       text: `
-        UPDATE sessions
+        UPDATE
+          sessions
         SET
           expires_at = $2,
           updated_at = NOW()
-        WHERE id = $1
-        RETURNING *;
-      `,
+        WHERE
+          id = $1
+        RETURNING
+          *
+        ;`,
       values: [sessionId, expiresAt],
     });
+
     return results.rows[0];
   }
 }
 
 async function expireById(sessionId) {
-  const expiredSessionById = await runUpdateQuery(sessionId);
-
-  return expiredSessionById;
+  const expiredSessionObject = await runUpdateQuery(sessionId);
+  return expiredSessionObject;
 
   async function runUpdateQuery(sessionId) {
     const results = await database.query({
-      text: `UPDATE sessions SET expires_at = expires_at - interval '1 year', updated_at = NOW() WHERE id = $1 RETURNING *;`,
+      text: `
+        UPDATE
+          sessions
+        SET
+          expires_at = expires_at - interval '1 year',
+          updated_at = NOW()
+        WHERE
+          id = $1
+        RETURNING
+          *
+        ;`,
       values: [sessionId],
     });
 
@@ -90,10 +112,10 @@ async function expireById(sessionId) {
 
 const session = {
   create,
-  EXPIRATION_IN_MILLISECONDS,
   findOneValidByToken,
   renew,
   expireById,
+  EXPIRATION_IN_MILLISECONDS,
 };
 
 export default session;

@@ -4,8 +4,9 @@ import { faker } from "@faker-js/faker";
 import database from "infra/database.js";
 import migrator from "models/migrator.js";
 import user from "models/user.js";
-import session from "models/session";
-import activation from "models/activation";
+import session from "models/session.js";
+import activation from "models/activation.js";
+import webserver from "infra/webserver.js";
 
 const emailHttpUrl = `http://${process.env.EMAIL_HTTP_HOST}:${process.env.EMAIL_HTTP_PORT}`;
 
@@ -20,7 +21,8 @@ async function waitForAllServices() {
     });
 
     async function fetchStatusPage() {
-      const response = await fetch("http://localhost:3000/api/v1/status");
+      const response = await fetch(`${webserver.origin}/api/v1/status`);
+
       if (response.status !== 200) {
         throw Error();
       }
@@ -35,6 +37,7 @@ async function waitForAllServices() {
 
     async function fetchEmailPage() {
       const response = await fetch(emailHttpUrl);
+
       if (response.status !== 200) {
         throw Error();
       }
@@ -59,8 +62,8 @@ async function createUser(userObject) {
   });
 }
 
-async function createSession(userID) {
-  return await session.create(userID);
+async function createSession(userObject) {
+  return await session.create(userObject.id);
 }
 
 async function deleteAllEmails() {
@@ -72,18 +75,18 @@ async function deleteAllEmails() {
 async function getLastEmail() {
   const emailListResponse = await fetch(`${emailHttpUrl}/messages`);
   const emailListBody = await emailListResponse.json();
-
   const lastEmailItem = emailListBody.pop();
 
-  if (!lastEmailItem) return null;
+  if (!lastEmailItem) {
+    return null;
+  }
 
-  const emailTextReponse = await fetch(
+  const emailTextResponse = await fetch(
     `${emailHttpUrl}/messages/${lastEmailItem.id}.plain`,
   );
-  const emailTextBody = await emailTextReponse.text();
+  const emailTextBody = await emailTextResponse.text();
 
   lastEmailItem.text = emailTextBody;
-
   return lastEmailItem;
 }
 
@@ -98,7 +101,6 @@ async function activateUser(inactiveUser) {
 
 async function addFeaturesToUser(userObject, features) {
   const updatedUser = await user.addFeatures(userObject.id, features);
-
   return updatedUser;
 }
 

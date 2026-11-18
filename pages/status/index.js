@@ -3,7 +3,6 @@ import useSWR from "swr";
 async function fetchAPI(key) {
   const response = await fetch(key);
   const responseBody = await response.json();
-
   return responseBody;
 }
 
@@ -22,13 +21,13 @@ function UpdatedAt() {
     refreshInterval: 2000,
   });
 
-  let UpdatedAtText = "Carregando...";
+  let updatedAtText = "Carregando...";
 
   if (!isLoading && data) {
-    UpdatedAtText = new Date(data.updated_at).toLocaleString("pt-BR");
+    updatedAtText = new Date(data.updated_at).toLocaleString("pt-BR");
   }
 
-  return <div>Última Atualização: {UpdatedAtText}</div>;
+  return <div>Última atualização: {updatedAtText}</div>;
 }
 
 function DatabaseStatus() {

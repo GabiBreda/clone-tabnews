@@ -2,6 +2,7 @@ import { version as uuidVersion } from "uuid";
 import orchestrator from "tests/orchestrator.js";
 import user from "models/user.js";
 import password from "models/password.js";
+import webserver from "infra/webserver.js";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -12,23 +13,25 @@ beforeAll(async () => {
 describe("POST /api/v1/users", () => {
   describe("Anonymous user", () => {
     test("With unique and valid data", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/users", {
+      const response = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: "teste123",
-          email: "teste@gmail.com",
+          username: "filipedeschamps",
+          email: "contato@curso.dev",
           password: "senha123",
         }),
       });
+
       expect(response.status).toBe(201);
 
       const responseBody = await response.json();
+
       expect(responseBody).toEqual({
         id: responseBody.id,
-        username: "teste123",
+        username: "filipedeschamps",
         features: ["read:activation_token"],
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
@@ -38,82 +41,87 @@ describe("POST /api/v1/users", () => {
       expect(Date.parse(responseBody.created_at)).not.toBeNaN();
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN();
 
-      const userInDatabase = await user.findOneByUsername("teste123");
-      const correctPasswrodMatch = await password.compare(
+      const userInDatabase = await user.findOneByUsername("filipedeschamps");
+      const correctPasswordMatch = await password.compare(
         "senha123",
         userInDatabase.password,
       );
-      const incorrectPasswrodMatch = await password.compare(
-        "senhaIncorreta",
+
+      const incorrectPasswordMatch = await password.compare(
+        "SenhaErrada",
         userInDatabase.password,
       );
 
-      expect(correctPasswrodMatch).toBe(true);
-      expect(incorrectPasswrodMatch).toBe(false);
+      expect(correctPasswordMatch).toBe(true);
+      expect(incorrectPasswordMatch).toBe(false);
     });
 
-    test("With duplicated email", async () => {
-      const response1 = await fetch("http://localhost:3000/api/v1/users", {
+    test("With duplicated `email`", async () => {
+      const response1 = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username: "emailduplicado1",
-          email: "emailduplicado@gmail.com",
+          email: "duplicado@curso.dev",
           password: "senha123",
         }),
       });
+
       expect(response1.status).toBe(201);
 
-      const response2 = await fetch("http://localhost:3000/api/v1/users", {
+      const response2 = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username: "emailduplicado2",
-          email: "EmailDuplicado@gmail.com",
+          email: "Duplicado@curso.dev",
           password: "senha123",
         }),
       });
+
       expect(response2.status).toBe(400);
 
       const response2Body = await response2.json();
 
       expect(response2Body).toEqual({
         name: "ValidationError",
-        message: "O email informado já está sendo utilizado",
-        action: "Utilize outro email para realizar esta operação",
+        message: "O email informado já está sendo utilizado.",
+        action: "Utilize outro email para realizar esta operação.",
         status_code: 400,
       });
     });
 
-    test("With duplicated username", async () => {
-      const response1 = await fetch("http://localhost:3000/api/v1/users", {
+    test("With duplicated `username`", async () => {
+      const response1 = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username: "usernameduplicado",
-          email: "username1@gmail.com",
+          email: "usernameduplicado1@curso.dev",
           password: "senha123",
         }),
       });
+
       expect(response1.status).toBe(201);
 
-      const response2 = await fetch("http://localhost:3000/api/v1/users", {
+      const response2 = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username: "UsernameDuplicado",
-          email: "username2@gmail.com",
+          email: "usernameduplicado2@curso.dev",
           password: "senha123",
         }),
       });
+
       expect(response2.status).toBe(400);
 
       const response2Body = await response2.json();
@@ -121,7 +129,7 @@ describe("POST /api/v1/users", () => {
       expect(response2Body).toEqual({
         name: "ValidationError",
         message: "O username informado já está sendo utilizado.",
-        action: "Utilize outro username para realizar esta operação",
+        action: "Utilize outro username para realizar esta operação.",
         status_code: 400,
       });
     });
@@ -131,9 +139,9 @@ describe("POST /api/v1/users", () => {
     test("With unique and valid data", async () => {
       const user1 = await orchestrator.createUser();
       await orchestrator.activateUser(user1);
-      const user1SessionObject = await orchestrator.createSession(user1.id);
+      const user1SessionObject = await orchestrator.createSession(user1);
 
-      const user2Response = await fetch("http://localhost:3000/api/v1/users", {
+      const user2Response = await fetch(`${webserver.origin}/api/v1/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
