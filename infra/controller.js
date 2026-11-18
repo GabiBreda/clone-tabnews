@@ -1,3 +1,8 @@
+import * as cookie from "cookie";
+import session from "models/session.js";
+import user from "models/user.js";
+import authorization from "models/authorization.js";
+
 import {
   InternalServerError,
   MethodNotAllowedError,
@@ -6,11 +11,6 @@ import {
   UnauthorizedError,
   ForbiddenError,
 } from "infra/errors";
-
-import * as cookie from "cookie";
-import session from "models/session.js";
-import user from "models/user.js";
-import authorization from "models/authorization.js";
 
 function onNoMatchHandler(request, response) {
   const publicErrorObject = new MethodNotAllowedError();
@@ -25,6 +25,7 @@ function onErrorHandler(error, request, response) {
   ) {
     return response.status(error.statusCode).json(error);
   }
+
   if (error instanceof UnauthorizedError) {
     clearSessionCookie(response);
     return response.status(error.statusCode).json(error);
@@ -36,21 +37,22 @@ function onErrorHandler(error, request, response) {
 
   console.error(publicErrorObject);
 
-  response.status(publicErrorObject.statusCode).json({ publicErrorObject });
+  response.status(publicErrorObject.statusCode).json(publicErrorObject);
 }
 
-async function setSessionCookie(sessionToken, response) {
+function setSessionCookie(sessionToken, response) {
   const setCookie = cookie.serialize("session_id", sessionToken, {
     path: "/",
     maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,
+    sameSite: "lax",
   });
 
   response.setHeader("Set-Cookie", setCookie);
 }
 
-async function clearSessionCookie(response) {
+function clearSessionCookie(response) {
   const setCookie = cookie.serialize("session_id", "invalid", {
     path: "/",
     maxAge: -1,
@@ -95,9 +97,9 @@ function injectAnonymousUser(request) {
 
 function canRequest(feature) {
   return function canRequestMiddleware(request, response, next) {
-    const userTryingToRquest = request.context.user;
+    const userTryingToRequest = request.context.user;
 
-    if (authorization.can(userTryingToRquest, feature)) {
+    if (authorization.can(userTryingToRequest, feature)) {
       return next();
     }
 
