@@ -26,7 +26,8 @@ async function findOneValidByToken(sessionToken) {
   }
 }
 
-async function create(userId) {
+async function create(userOrId) {
+  const userId = userOrId.id || userOrId;
   const token = crypto.randomBytes(48).toString("hex");
   const expiresAt = new Date(Date.now() + EXPIRATION_IN_MILLISECONDS);
 
